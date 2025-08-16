@@ -1,5 +1,3 @@
-
-
 #Remember source pointbot/bin/activate
 import os
 import discord
@@ -101,15 +99,20 @@ class my_client(discord.Client):
                     print(str(e))
                     await message.channel.send("It did not work, exception")
 
-        #List your own matches
-        elif re.match(r"^![lL]ist$",message.content):
-            matchlist=[["id","user","player1","score","wtc","player2","score","wtc","date"]]
+        #This should not be a separate thing. This should be integrated above. Lists a specified users matches
+        elif re.match(r"^![lL]ist.*",message.content)
+            matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
             matches_found=False
+            if len(message.mentions!=1):
+                user = str(message.author)
+            else:
+                user = str(message.mentions[0])
+            
             try: 
                 with open("pointbot/memory","r") as permanent_memory_read:
                     lines=permanent_memory_read.readlines()
                     for line in lines:
-                        if re.match(r"^\d+,"+str(message.author)+".*",line):
+                        if re.match(r"^\d+,"+str(message.mentions[0])+".*",line):
                             matchlist.append(line[:-1].split(","))
                             matches_found=True
                 if matches_found:
@@ -120,40 +123,13 @@ class my_client(discord.Client):
                             if len(y)> 11:
                                 y=y[:10]
                             post+=y.ljust(11," ")
-
+    
                     await message.channel.send("```"+post+"```")
                     print(matchlist)
                 else:
                     await message.channel.send("No matches registered")
             except Exception as e:
                 print(e)
-        #This should not be a separate thing. This should be integrated above. Lists a specified users matches
-        elif re.match(r"^![lL]ist .*",message.content):
-            matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
-            matches_found=False
-            if len(message.mentions)==1:
-                try: 
-                    with open("pointbot/memory","r") as permanent_memory_read:
-                        lines=permanent_memory_read.readlines()
-                        for line in lines:
-                            if re.match(r"^\d+,"+str(message.mentions[0])+".*",line):
-                                matchlist.append(line[:-1].split(","))
-                                matches_found=True
-                    if matches_found:
-                        post = ""
-                        for x in matchlist: 
-                            post+="\n"
-                            for y in x:
-                                if len(y)> 11:
-                                    y=y[:10]
-                                post+=y.ljust(11," ")
-    
-                        await message.channel.send("```"+post+"```")
-                        print(matchlist)
-                    else:
-                        await message.channel.send("No matches registered")
-                except Exception as e:
-                    print(e)
 
         #Fredrik wanted this feature
         elif re.match(r"^[kK]an.*få.*snittet\?*",message.content):
