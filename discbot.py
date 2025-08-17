@@ -1,4 +1,5 @@
 #Remember source pointbot/bin/activate
+#Remember to download discord.py with pip
 import os
 import discord
 import re
