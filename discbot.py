@@ -5,8 +5,10 @@ import discord
 import re
 import random
 import datetime
+from discord import app_commands
 
 intents=discord.Intents.default()
+intents.message_content=True
 memory=[]
 
 class warhammermatch:
@@ -63,6 +65,25 @@ class warhammermatch:
 		return(self.match_id)
 
 class my_client(discord.Client):
+	def __init__(self, *, intents:discord.Intents):
+		super().__init__(intents=intents)
+		self.tree=app_commands.CommandTree(self)
+		self.tree.add_command(self.register_command)
+	async def on_ready(self):
+		guild_id=622767259466727474
+		ks=discord.Object(id=guild_id)
+		#self.tree.clear_commands(guild=ks)
+		print("copy global")
+		self.tree.copy_global_to(guild=ks)
+		print("tree sync")
+		await self.tree.sync(guild=ks)
+		print("Lets go!")
+	
+	@app_commands.command(name="register", description="Register a new match")
+	async def register_command(self, interaction: discord.Interaction, player1_name: str, score1: int, player2_name:str, score2:int):
+		submitter = str(interaction.user) 
+		print("heya")
+	
 	#When we get a message, do stuff
 	async def on_message(self, message):
 		#Never, ever answer yourself
@@ -246,7 +267,7 @@ class my_client(discord.Client):
 				await message.channel.send("Dropping tables....\nOverwriting hard drive.....\ndeleting secret stash of porn...\nall matches are gone!\nhttps://xkcd.com/327/")
 				#await message.channel.send(history)
 		
-with open("disckey") as dt_file:
+with open("../disckey") as dt_file:
 	dt = "".join(dt_file.readlines())
 #	print("".join(dt)) 
 intents.message_content=True
