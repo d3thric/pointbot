@@ -68,12 +68,29 @@ class my_client(discord.Client):
 	def __init__(self, *, intents:discord.Intents):
 		super().__init__(intents=intents)
 		self.tree=app_commands.CommandTree(self)
+		
+	async def setup_hook(self):
+		guild_id=622767259466727474
+		ks=discord.Object(id=guild_id)
+		self.tree.copy_global_to(guild=ks)
+		await self.tree.sync(guild=ks)
 
-	
-	@app_commands.command(name="register", description="Register a fight")
-	async def register_command(self, interaction: discord.Interaction, player1_name: str, score1: int, player2_name:str, score2:int):
-		submitter = str(interaction.user) 
-		print("heya")
+
+	def register_match(self,poster,player1,score1,player2,score2):
+		if score1 not in range(0,101):
+			error = "Player 1 score out of bounds\n"
+		if score2 not in range(0,101):
+			error += "Player 2 score out of bounds\n"
+		
+		new_match = warhammermatch(poster,player1, player2, score1, score2)
+		print(new_match.get_data())
+		new_match.save_data()
+		return("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
+			
+
+
+
+################################################OLD
 	
 	#When we get a message, do stuff
 	async def on_message(self, message):
@@ -89,80 +106,80 @@ class my_client(discord.Client):
 		elif message.content == "!help" or message.content == "Hur fan funkar det här?":
 			await message.channel.send("Pointbot är en dum bot, den har några funktioner. Främst så registerar den poäng och normaliserar dem enligt WTC-stil på en skala från 0 till 20 baserat på poängdiff.\n\n\n man kan använda \'!Register ditt_namn poäng motståndar_namn poäng\' för att registrera en match.\n Exempel:\n!Register: Clownen 15 Bananen 23\nEller ännu bättre:\n !Register me 15 @mention 30 - Regga med din egen och någon annans användare för att få ännu bättre spårbarhet i matcher \n\n !list - Lista dina egna matcher \n\n !list @mention - lista någon annans matcher\n\n!delete [int] - ta bort en match du har lagt till\n\n!avg - se ditt snittpoäng\n!avg @mention - se en annan persons snittpoäng\n\n\n")
 		
-		elif re.match(r"^!newreg:* [^\s]+ \d+ [^\s+ \d+]",message.content):
-			mess=re.match(r"!newreg:* ([^\s]+) (\d+) ([^\s]+) (\d+)",message.content)
-			score1=int(mess[2])
-			score2=int(mess[4])
-			if len(message.mentions) == 2:
-				player1=str(message.mentions[0])
-				player2=str(message.mentions[1])
-			elif len(message.mentions)==1:
-				player1 = str(message.author)
-				player2 = str(message.mentions[0])
-			else:
-				player1=str(mess[1])
-				player2=str(mess[3])
-			if score1 not in range(0,101):
-				error = "Player 1 score out of bounds\n"
-			if score2 not in range(0,101):
-				error += "Player 2 score out of bounds\n"
-			
-			
-			new_match = warhammermatch(str(message.author),player1, player2, score1, score2)
-			print(new_match.get_data())
-			new_match.save_data()
-			await message.channel.send("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
-			
-		#Register a match
-		
-		elif re.match(r"^![Rr]egister:* \w+ \d+ [^\s]+ \d+", message.content):
-			mess = re.match(r"^![Rr]egister:* ([^\s]+) (\d+) ([^\s]+) (\d+)",message.content)
-			#If the message has mentions, set the mentioned player as player2 (opponent) and speaker to player1, ugly
-			if message.mentions:
-				player1=(str(message.author),int(mess[2]))
-				player2=(str(message.mentions[0]),int(mess[4]))
-			#If the message doesn't have mentions, take the values from the reg.
-			else:
-				player1 = (mess[1],int(mess[2]))
-				player2 = (mess[3],int(mess[4]))
-			wtc_points= min(10,int((abs(player1[1]-player2[1])-1)/5))
-			#This variable should be somewhere else
-			mem=""
-			#Sanitycheck the scores
-			if player1[1] not in range(0,101):
-				post = "Error: Score out of bounds"
-				print("Error: Score out of bounds")
-			#Why am i doing this twice?
-			elif player2[1] not in range(0,101):
-				post = "Error: Score out of bounds"
-				print("Error: Score out of bounds")
-
-			#Check who wins, build a list with values and an answer
-			elif player1[1] > player2[1]:
-				post = player1[0] + " wins with " + str(player1[1] - player2[1]) + " points" 
-				mem=[player1[0], player1[1], 10+wtc_points, player2[0],player2[1],10-wtc_points]
-			elif player2[1] > player1[1]:
-				post = player2[0] + " wins with " + str(player2[1] - player1[1]) + " points"
-				mem=[player1[0],player1[1], 10-wtc_points, player2[0],player2[1],10+wtc_points]
-			else:
-				post = "its a draw" 
-				mem=[player1[0],player1[1],10,player2[0],player2[1],10]
-			
-			#If the post is sane, post the results to chat
-			if not re.match("^Error.*",post):
-				post+=("\nin WTC terms that is " + str(10+wtc_points) + "-" + str(10-wtc_points) + ", thats nice")
-			
-			#This should be somewhere else. Randomize a number as the ID of a match. Collisions?
-			message_id=random.randint(1000000,9999999)
-			#If we have created a list that we want to remember, remember it and put it in a file.
-			#This should create the file if it doesnt exist. Fix later
-			if len(mem) > 0:
-				memory.append(mem)
-				with open("pointbot/memory", "a") as permanent_memory:
-					#Add date to the match
-					permanent_memory.write(str(message_id)+","+str(message.author) + ","+(''.join(str(item)+"," for item in mem))[:-1]+","+str(datetime.datetime.now())+"\n")
-			await message.channel.send(post+"\n your message id is: "+str(message_id))
-
+#		elif re.match(r"^!newreg:* [^\s]+ \d+ [^\s+ \d+]",message.content):
+#			mess=re.match(r"!newreg:* ([^\s]+) (\d+) ([^\s]+) (\d+)",message.content)
+#			score1=int(mess[2])
+#			score2=int(mess[4])
+#			if len(message.mentions) == 2:
+#				player1=str(message.mentions[0])
+#				player2=str(message.mentions[1])
+#			elif len(message.mentions)==1:
+#				player1 = str(message.author)
+#				player2 = str(message.mentions[0])
+#			else:
+#				player1=str(mess[1])
+#				player2=str(mess[3])
+#			if score1 not in range(0,101):
+#				error = "Player 1 score out of bounds\n"
+#			if score2 not in range(0,101):
+#				error += "Player 2 score out of bounds\n"
+#			
+#			
+#			new_match = warhammermatch(str(message.author),player1, player2, score1, score2)
+#			print(new_match.get_data())
+#			new_match.save_data()
+#			await message.channel.send("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
+#			
+#		#Register a match
+#		
+#		elif re.match(r"^![Rr]egister:* \w+ \d+ [^\s]+ \d+", message.content):
+#			mess = re.match(r"^![Rr]egister:* ([^\s]+) (\d+) ([^\s]+) (\d+)",message.content)
+#			#If the message has mentions, set the mentioned player as player2 (opponent) and speaker to player1, ugly
+#			if message.mentions:
+#				player1=(str(message.author),int(mess[2]))
+#				player2=(str(message.mentions[0]),int(mess[4]))
+#			#If the message doesn't have mentions, take the values from the reg.
+#			else:
+#				player1 = (mess[1],int(mess[2]))
+#				player2 = (mess[3],int(mess[4]))
+#			wtc_points= min(10,int((abs(player1[1]-player2[1])-1)/5))
+#			#This variable should be somewhere else
+#			mem=""
+#			#Sanitycheck the scores
+#			if player1[1] not in range(0,101):
+#				post = "Error: Score out of bounds"
+#				print("Error: Score out of bounds")
+#			#Why am i doing this twice?
+#			elif player2[1] not in range(0,101):
+#				post = "Error: Score out of bounds"
+#				print("Error: Score out of bounds")
+#
+#			#Check who wins, build a list with values and an answer
+#			elif player1[1] > player2[1]:
+#				post = player1[0] + " wins with " + str(player1[1] - player2[1]) + " points" 
+#				mem=[player1[0], player1[1], 10+wtc_points, player2[0],player2[1],10-wtc_points]
+#			elif player2[1] > player1[1]:
+#				post = player2[0] + " wins with " + str(player2[1] - player1[1]) + " points"
+#				mem=[player1[0],player1[1], 10-wtc_points, player2[0],player2[1],10+wtc_points]
+#			else:
+#				post = "its a draw" 
+#				mem=[player1[0],player1[1],10,player2[0],player2[1],10]
+#			
+#			#If the post is sane, post the results to chat
+#			if not re.match("^Error.*",post):
+#				post+=("\nin WTC terms that is " + str(10+wtc_points) + "-" + str(10-wtc_points) + ", thats nice")
+#			
+#			#This should be somewhere else. Randomize a number as the ID of a match. Collisions?
+#			message_id=random.randint(1000000,9999999)
+#			#If we have created a list that we want to remember, remember it and put it in a file.
+#			#This should create the file if it doesnt exist. Fix later
+#			if len(mem) > 0:
+#				memory.append(mem)
+#				with open("pointbot/memory", "a") as permanent_memory:
+#					#Add date to the match
+#					permanent_memory.write(str(message_id)+","+str(message.author) + ","+(''.join(str(item)+"," for item in mem))[:-1]+","+str(datetime.datetime.now())+"\n")
+#			await message.channel.send(post+"\n your message id is: "+str(message_id))
+#
 		#Delete unwanted matches
 		elif re.match(r"^![dD]elete:* \d+", message.content):
 			#Open memory file
@@ -263,16 +280,19 @@ with open("../disckey") as dt_file:
 #	print("".join(dt)) 
 intents.message_content=True
 client = my_client(intents=intents) 
-@client.event
+
 async def on_ready():
-	guild_id=622767259466727474
 	print(client.guilds)
 	print(client.tree.get_commands())
-	ks=discord.Object(id=guild_id)
-	client.tree.clear_commands(guild=ks)
-	client.tree.add_command(client.register_command)
-	client.tree.copy_global_to(guild=ks)
-	await client.tree.sync(guild=ks)
-	print(client.tree.get_commands())
 	print("Lets go!")
+@client.tree.command()
+async def test(interaction: discord.Interaction):
+	await interaction.response.send_message(f"hello {interaction.user.mention}")
+
+@client.tree.command()
+async def register(interaction: discord.Interaction, player1_name: str, score1: int, player2_name:str, score2:int):
+	submitter = str(interaction.user) 
+	post=client.register_match(interaction.user,player1_name,score1,player2_name,score2)
+	
+	await interaction.response.send_message(post)
 client.run(dt)
