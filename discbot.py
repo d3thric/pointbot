@@ -68,18 +68,9 @@ class my_client(discord.Client):
 	def __init__(self, *, intents:discord.Intents):
 		super().__init__(intents=intents)
 		self.tree=app_commands.CommandTree(self)
-		self.tree.add_command(self.register_command)
-	async def on_ready(self):
-		guild_id=622767259466727474
-		ks=discord.Object(id=guild_id)
-		#self.tree.clear_commands(guild=ks)
-		print("copy global")
-		self.tree.copy_global_to(guild=ks)
-		print("tree sync")
-		await self.tree.sync(guild=ks)
-		print("Lets go!")
+
 	
-	@app_commands.command(name="register", description="Register a new match")
+	@app_commands.command(name="register", description="Register a fight")
 	async def register_command(self, interaction: discord.Interaction, player1_name: str, score1: int, player2_name:str, score2:int):
 		submitter = str(interaction.user) 
 		print("heya")
@@ -272,4 +263,16 @@ with open("../disckey") as dt_file:
 #	print("".join(dt)) 
 intents.message_content=True
 client = my_client(intents=intents) 
+@client.event
+async def on_ready():
+	guild_id=622767259466727474
+	print(client.guilds)
+	print(client.tree.get_commands())
+	ks=discord.Object(id=guild_id)
+	client.tree.clear_commands(guild=ks)
+	client.tree.add_command(client.register_command)
+	client.tree.copy_global_to(guild=ks)
+	await client.tree.sync(guild=ks)
+	print(client.tree.get_commands())
+	print("Lets go!")
 client.run(dt)
