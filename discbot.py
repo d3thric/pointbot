@@ -268,74 +268,74 @@ class my_client(discord.Client):
 #					print(str(e))
 #					await message.channel.send("It did not work, exception")
 #
-		#This should not be a separate thing. This should be integrated above. Lists a specified users matches
-		elif re.match(r"^![lL]ist.*",message.content):
-			matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
-			matches_found=False
-			if len(message.mentions)!=1:
-				user = str(message.author)
-			else:
-				user = str(message.mentions[0])
-			
-			try: 
-				with open("pointbot/memory","r") as permanent_memory_read:
-					lines=permanent_memory_read.readlines()
-					for line in lines:
-						if re.match(r"^\d+,"+user+".*",line):
-							matchlist.append(line[:-1].split(","))
-							matches_found=True
-				if matches_found:
-					post = ""
-					for x in matchlist: 
-						post+="\n"
-						for y in x:
-							if len(y)> 11:
-								y=y[:10]
-							post+=y.ljust(11," ")
-	
-					await message.channel.send("```"+post+"```")
-					print(matchlist)
-				else:
-					await message.channel.send("No matches registered")
-			except Exception as e:
-				print(e)
-
-		#Fredrik wanted this feature
-		elif re.match(r"^[kK]an.*få.*snittet\?*",message.content):
-			await message.channel.send("Nej "+message.author.nick)
-		#meme?
-		elif re.match(r"Kuken",message.content):
-			await message.channel.send("Nu gick något åt helvete för "+message.author.nick)
-		#Get average score of someone else, if mentioned
-		elif re.match("!avg .*",message.content):
-			if len(message.mentions)==1:
-				with open("pointbot/memory","r") as permanent_memory_read:
-					lines = permanent_memory_read.readlines()
-					history=[]
-					for line in lines:
-						if re.match(r"^\d+,"+str(message.mentions[0])+".*",line):
-							history.append(int(re.match(r"^\d+,"+str(message.mentions[0])+r",\w+,\d+,(\d+),.*",line)[1]))
-					if len(history)>0:
-						await message.channel.send(str(message.mentions[0])+" snitt är "+str(sum(history)/len(history)))
-					else:
-						await message.channel.send(str(message.mentions[0])+" har inte spelat några matcher, jag tänker inte dela med 0")
-		#This should be integrated above
-		elif message.content == "!avg" or re.match(r"[jJ]ag är snittet", message.content): 
-			with open("pointbot/memory","r") as permanent_memory_read:
-				lines = permanent_memory_read.readlines()
-				history=[]
-				for line in lines:
-					if re.match(r"^\d+,"+str(message.author)+".*",line):
-						history.append(int(re.match(r"^\d+,"+str(message.author)+r",\w+,\d+,(\d+),.*",line)[1]))
-				if len(history)>0:
-					await message.channel.send("Ditt snitt är "+str(sum(history)/len(history)))
-				else:
-					await message.channel.send("Du har inte spelat några matcher, jag tänker inte dela med 0")
-		#Bobby tables
-		elif message.content == "Robert'); DROP TABLE *;--":
-				await message.channel.send("Dropping tables....\nOverwriting hard drive.....\ndeleting secret stash of porn...\nall matches are gone!\nhttps://xkcd.com/327/")
-				#await message.channel.send(history)
-		
+#		#This should not be a separate thing. This should be integrated above. Lists a specified users matches
+#		elif re.match(r"^![lL]ist.*",message.content):
+#			matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
+#			matches_found=False
+#			if len(message.mentions)!=1:
+#				user = str(message.author)
+#			else:
+#				user = str(message.mentions[0])
+#			
+#			try: 
+#				with open("pointbot/memory","r") as permanent_memory_read:
+#					lines=permanent_memory_read.readlines()
+#					for line in lines:
+#						if re.match(r"^\d+,"+user+".*",line):
+#							matchlist.append(line[:-1].split(","))
+#							matches_found=True
+#				if matches_found:
+#					post = ""
+#					for x in matchlist: 
+#						post+="\n"
+#						for y in x:
+#							if len(y)> 11:
+#								y=y[:10]
+#							post+=y.ljust(11," ")
+#	
+#					await message.channel.send("```"+post+"```")
+#					print(matchlist)
+#				else:
+#					await message.channel.send("No matches registered")
+#			except Exception as e:
+#				print(e)
+#
+#		#Fredrik wanted this feature
+#		elif re.match(r"^[kK]an.*få.*snittet\?*",message.content):
+#			await message.channel.send("Nej "+message.author.nick)
+#		#meme?
+#		elif re.match(r"Kuken",message.content):
+#			await message.channel.send("Nu gick något åt helvete för "+message.author.nick)
+#		#Get average score of someone else, if mentioned
+#		elif re.match("!avg .*",message.content):
+#			if len(message.mentions)==1:
+#				with open("pointbot/memory","r") as permanent_memory_read:
+#					lines = permanent_memory_read.readlines()
+#					history=[]
+#					for line in lines:
+#						if re.match(r"^\d+,"+str(message.mentions[0])+".*",line):
+#							history.append(int(re.match(r"^\d+,"+str(message.mentions[0])+r",\w+,\d+,(\d+),.*",line)[1]))
+#					if len(history)>0:
+#						await message.channel.send(str(message.mentions[0])+" snitt är "+str(sum(history)/len(history)))
+#					else:
+#						await message.channel.send(str(message.mentions[0])+" har inte spelat några matcher, jag tänker inte dela med 0")
+#		#This should be integrated above
+#		elif message.content == "!avg" or re.match(r"[jJ]ag är snittet", message.content): 
+#			with open("pointbot/memory","r") as permanent_memory_read:
+#				lines = permanent_memory_read.readlines()
+#				history=[]
+#				for line in lines:
+#					if re.match(r"^\d+,"+str(message.author)+".*",line):
+#						history.append(int(re.match(r"^\d+,"+str(message.author)+r",\w+,\d+,(\d+),.*",line)[1]))
+#				if len(history)>0:
+#					await message.channel.send("Ditt snitt är "+str(sum(history)/len(history)))
+#				else:
+#					await message.channel.send("Du har inte spelat några matcher, jag tänker inte dela med 0")
+#		#Bobby tables
+#		elif message.content == "Robert'); DROP TABLE *;--":
+#				await message.channel.send("Dropping tables....\nOverwriting hard drive.....\ndeleting secret stash of porn...\nall matches are gone!\nhttps://xkcd.com/327/")
+#				#await message.channel.send(history)
+#		
 with open("../disckey") as dt_file:
 	dt = "".join(dt_file.readlines())
 #	print("".join(dt)) 
@@ -346,11 +346,12 @@ async def on_ready():
 	print(client.guilds)
 	print(client.tree.get_commands())
 	print("Lets go!")
+
 @client.tree.command(name="test",description="says hello")
 async def test(interaction: discord.Interaction):
 	await interaction.response.send_message(f"hello {interaction.user.mention}")
 
-@client.tree.command(name="register_match",description="Register a match, use strings for players")
+@client.tree.command(name="register_match",description="Register a match, use mentions for players")
 async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:discord.Member, score2:int):
 	submitter = str(interaction.user) 
 	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2)
@@ -363,7 +364,7 @@ async def delete(interaction: discord.Interaction,match_id:int):
 
 	await interaction.response.send_message(post)
 
-@client.tree.command()
+@client.tree.command(description="Mention the user whose matches you want to see")
 async def list(interaction: discord.Interaction, user:discord.Member):
 	print(user)
 	post=client.list_matches(user.name)
