@@ -121,11 +121,17 @@ class my_client(discord.Client):
 		try: 
 			with open("pointbot/memory","r") as permanent_memory_read:
 				lines=permanent_memory_read.readlines()
-				for line in lines:
-					print(line.split(","))
-					if "#" not in line and (user==line.split(",")[2] or user==line.split(",")[5]):
-						matchlist.append(line[:-1].split(","))
-						matches_found=True
+				if len(lines)>0:
+					for line in lines:
+						if "," in line:
+							print(line.split(","))
+							if "#" not in line and (user==line.split(",")[2] or user==line.split(",")[5]):
+								matchlist.append(line[:-1].split(","))
+								matches_found=True
+						else:
+							print("the file might be wierd?")
+				else:
+					return("No matches registered")
 			if matches_found:
 				post = ""
 				for x in matchlist: 
