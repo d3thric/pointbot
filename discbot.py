@@ -87,6 +87,61 @@ class my_client(discord.Client):
 		new_match.save_data()
 		return("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
 			
+	def delete_match(self,match_id,user):
+		#Open memory file
+		#Find correct line
+		#Purge that line. Or just add something that marks it as deleted 
+		#When i say "delete" i mean "Mark with a #"
+		with open("pointbot/memory","r") as permanent_memory_read:
+			lines=permanent_memory_read.readlines()
+			change_marker=False
+			try:
+				#Eww
+				with open("pointbot/memory","w") as permanent_memory_write:
+					for line in lines:
+						if re.match(str(match_id)+","+str(user)+".*",line):
+							permanent_memory_write.write("#"+line)
+							change_marker=True
+						else:
+							permanent_memory_write.write(line)
+				if change_marker is True:
+					return("Match deleted")
+				else: 
+					return("It did not work")
+			except Exception as e:
+				print(str(e))
+				return("It did not work, exception")
+
+
+
+	def list_matches(self,user):
+		matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
+		matches_found=False
+
+		try: 
+			with open("pointbot/memory","r") as permanent_memory_read:
+				lines=permanent_memory_read.readlines()
+				for line in lines:
+					print(line.split(","))
+					if "#" not in line and (user==line.split(",")[2] or user==line.split(",")[5]):
+						matchlist.append(line[:-1].split(","))
+						matches_found=True
+			if matches_found:
+				post = ""
+				for x in matchlist: 
+					post+="\n"
+					for y in x:
+						if len(y)> 11:
+							y=y[:10]
+						post+=y.ljust(11," ")
+
+				return("```"+post+"```")
+				print(matchlist)
+			else:
+				return("No matches registered")
+		except Exception as e:
+			print(e)
+
 
 
 
@@ -180,33 +235,33 @@ class my_client(discord.Client):
 #					permanent_memory.write(str(message_id)+","+str(message.author) + ","+(''.join(str(item)+"," for item in mem))[:-1]+","+str(datetime.datetime.now())+"\n")
 #			await message.channel.send(post+"\n your message id is: "+str(message_id))
 #
-		#Delete unwanted matches
-		elif re.match(r"^![dD]elete:* \d+", message.content):
-			#Open memory file
-			#Find correct line
-			#Purge that line. Or just add something that marks it as deleted 
-			message_id=re.match(r"^![dD]elete:* (\d+)",message.content)[1]
-		#When i say "delete" i mean "Mark with a #"
-			with open("pointbot/memory","r") as permanent_memory_read:
-				lines=permanent_memory_read.readlines()
-				change_marker=False
-				try:
-					#Eww
-					with open("pointbot/memory","w") as permanent_memory_write:
-						for line in lines:
-							if re.match(message_id+","+str(message.author)+".*",line):
-								permanent_memory_write.write("#"+line)
-								change_marker=True
-							else:
-								permanent_memory_write.write(line)
-					if change_marker is True:
-						await message.channel.send("Did it work? Who knows?")
-					else: 
-						await message.channel.send("It did not work")
-				except Exception as e:
-					print(str(e))
-					await message.channel.send("It did not work, exception")
-
+#		#Delete unwanted matches
+#		elif re.match(r"^![dD]elete:* \d+", message.content):
+#			#Open memory file
+#			#Find correct line
+#			#Purge that line. Or just add something that marks it as deleted 
+#			message_id=re.match(r"^![dD]elete:* (\d+)",message.content)[1]
+#		#When i say "delete" i mean "Mark with a #"
+#			with open("pointbot/memory","r") as permanent_memory_read:
+#				lines=permanent_memory_read.readlines()
+#				change_marker=False
+#				try:
+#					#Eww
+#					with open("pointbot/memory","w") as permanent_memory_write:
+#						for line in lines:
+#							if re.match(message_id+","+str(message.author)+".*",line):
+#								permanent_memory_write.write("#"+line)
+#								change_marker=True
+#							else:
+#								permanent_memory_write.write(line)
+#					if change_marker is True:
+#						await message.channel.send("Did it work? Who knows?")
+#					else: 
+#						await message.channel.send("It did not work")
+#				except Exception as e:
+#					print(str(e))
+#					await message.channel.send("It did not work, exception")
+#
 		#This should not be a separate thing. This should be integrated above. Lists a specified users matches
 		elif re.match(r"^![lL]ist.*",message.content):
 			matchlist=[["id","user","player1","score","wtc","player2","score","wtc"]]
@@ -253,7 +308,7 @@ class my_client(discord.Client):
 					history=[]
 					for line in lines:
 						if re.match(r"^\d+,"+str(message.mentions[0])+".*",line):
-							history.append(int(re.match(r"^\d+,"+str(message.mentions[0])+",\w+,\d+,(\d+),.*",line)[1]))
+							history.append(int(re.match(r"^\d+,"+str(message.mentions[0])+r",\w+,\d+,(\d+),.*",line)[1]))
 					if len(history)>0:
 						await message.channel.send(str(message.mentions[0])+" snitt är "+str(sum(history)/len(history)))
 					else:
@@ -265,7 +320,7 @@ class my_client(discord.Client):
 				history=[]
 				for line in lines:
 					if re.match(r"^\d+,"+str(message.author)+".*",line):
-						history.append(int(re.match(r"^\d+,"+str(message.author)+",\w+,\d+,(\d+),.*",line)[1]))
+						history.append(int(re.match(r"^\d+,"+str(message.author)+r",\w+,\d+,(\d+),.*",line)[1]))
 				if len(history)>0:
 					await message.channel.send("Ditt snitt är "+str(sum(history)/len(history)))
 				else:
@@ -285,14 +340,28 @@ async def on_ready():
 	print(client.guilds)
 	print(client.tree.get_commands())
 	print("Lets go!")
-@client.tree.command()
+@client.tree.command(name="test",description="says hello")
 async def test(interaction: discord.Interaction):
 	await interaction.response.send_message(f"hello {interaction.user.mention}")
 
-@client.tree.command()
-async def register(interaction: discord.Interaction, player1_name: str, score1: int, player2_name:str, score2:int):
+@client.tree.command(name="register_match",description="Register a match, use strings for players")
+async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:discord.Member, score2:int):
 	submitter = str(interaction.user) 
-	post=client.register_match(interaction.user,player1_name,score1,player2_name,score2)
+	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2)
 	
 	await interaction.response.send_message(post)
+
+@client.tree.command(description="Deletes a match based on id")
+async def delete(interaction: discord.Interaction,match_id:int):
+	post=client.delete_match(match_id,interaction.user)
+
+	await interaction.response.send_message(post)
+
+@client.tree.command()
+async def list(interaction: discord.Interaction, user:discord.Member):
+	print(user)
+	post=client.list_matches(user.name)
+
+	await interaction.response.send_message(post)
+
 client.run(dt)
