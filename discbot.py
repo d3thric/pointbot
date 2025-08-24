@@ -317,8 +317,12 @@ async def avg(interaction: discord.Interaction, user:discord.Member):
 
 @client.tree.command(description="Image black magic")
 async def black_magic(interaction: discord.Interaction, file:discord.Attachment):
+	
+	await interaction.response.defer(ephemeral=True)
 	post = client.ocr(file)
-	await interaction.response.send_message(post)
+	
+	await interaction.followup.send(post)
+
 
 
 
