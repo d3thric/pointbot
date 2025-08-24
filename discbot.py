@@ -215,14 +215,54 @@ async def on_ready():
 	print(client.tree.get_commands())
 	print("Lets go!")
 
-@client.tree.command(name="test",description="says hello")
+@client.tree.command(name="help",description="prints helpful tips")
 async def test(interaction: discord.Interaction):
-	await interaction.response.send_message(f"hello {interaction.user.mention}")
+	await interaction.response.send_message(f"""
+hello {interaction.user.mention}
+I am a bot that keeps track of warhammer matches
+Arguments are described inside Crocoparenthesis with a hint and a data type separated by a colon
+Common commands are: 
+
+/register_match 
+Register a match
+Syntax: /register_match <player1:mention_user> <score:int> <player2:mention_user> <score:int>
+Tip: user third_party_register_match if you want to register a match agains a person outside of this discord server
+
+/third_party_register_match
+Syntax: /register_match <player1:mention_user> <score:int> <player2:str> <score:int>
+Tip: Dont use this if you play against someone that is present in this discord server
+
+/delete
+Delete a match
+Syntax: /delete <matchid:int>
+Tip: See match ids with /full_list
+Tip: You can only delete matches you have registered yourself
+Tip: This command is not truly destructive
+
+/full_list
+List all matches of a player verbosely 
+Syntax: /full_list <player:mention_user>
+
+/list
+List all matches of a player
+Syntax: /list <player:mention_user>
+
+/avg
+Show the scoresheet for a player
+Syntax /avg <player:mention_user>
+""")
 
 @client.tree.command(name="register_match",description="Register a match, use mentions for players")
 async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:discord.Member, score2:int):
 	submitter = str(interaction.user) 
 	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2)
+	
+	await interaction.response.send_message(post)
+
+@client.tree.command(name="third_party_register_match",description="Register a match, use mention for memberplayer and string for third party")
+async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:str, score2:int):
+	submitter = str(interaction.user) 
+	post=client.register_match(interaction.user,player1.name,score1,"ext_"+player2,score2)
 	
 	await interaction.response.send_message(post)
 
