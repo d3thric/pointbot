@@ -56,7 +56,7 @@ class warhammermatch:
 
 	def save_data(self):
 		with open("pointbot/memory","a") as permanent_memory:
-			permanent_memory.write(str(self.match_id)+","+str(self.submitter)+","+str(self.player1)+","+str(self.score1)+","+str(self.wtc1)+","+str(self.player2)+","+str(self.score2)+","+str(self.wtc2)+","+str(datetime.datetime.now())+"\n")
+			permanent_memory.write(str(self.match_id)+","+str(self.submitter)+","+str(self.player1)+","+self.faction1+","+str(self.score1)+","+str(self.wtc1)+","+str(self.player2)+","+self.faction2+","+str(self.score2)+","+str(self.wtc2)+","+str(datetime.datetime.now())+"\n")
 
 	def get_winner(self):
 		return(self.winner)
@@ -76,13 +76,16 @@ class my_client(discord.Client):
 		await self.tree.sync(guild=ks)
 
 
-	def register_match(self,poster,player1,score1,player2,score2):
+	def register_match(self,poster,player1,score1,player2,score2, *args):
 		if score1 not in range(0,101):
 			error = "Player 1 score out of bounds\n"
 		if score2 not in range(0,101):
 			error += "Player 2 score out of bounds\n"
-		
+		print(args)	
 		new_match = warhammermatch(poster,player1, player2, score1, score2)
+		if args[0] and args[1]:
+			new_match.set_factions(args[0],args[1])
+		
 		print(new_match.get_data())
 		new_match.save_data()
 		return("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
@@ -123,9 +126,9 @@ class my_client(discord.Client):
 			elif arg=="limit":
 				limit=True
 		if limit:
-			matchlist=[["player1","score","wtc","player2","score","wtc"]]
+			matchlist=[["player1","faction","score","wtc","player2","faction","score","wtc"]]
 		else:
-			matchlist=[["id","user","player1","score","wtc","player2","score","wtc","date"]]
+			matchlist=[["id","user","player1","faction","score","wtc","player2","faction","score","wtc","date"]]
 		matches_found=False
 		
 		try: 
@@ -134,7 +137,7 @@ class my_client(discord.Client):
 				if len(lines)>0:
 					for line in lines:
 						if "," in line:
-							if "#" not in line and (user==line.split(",")[2] or user==line.split(",")[5]):
+							if "#" not in line and (user==line.split(",")[2] or user==line.split(",")[6]):
 								if limit:
 									matchlist.append(line.split(",")[2:-1])
 								else:
@@ -226,8 +229,9 @@ Common commands are:
 /register_match 
 Register a match
 Syntax: /register_match <player1:mention_user> <score:int> <player2:mention_user> <score:int>
+Alt syntax: /register_match <player1:mention_user> <score:int> <player2:mention_user> <score:int> <faction1:string> <faction2:string>
 Tip: user third_party_register_match if you want to register a match agains a person outside of this discord server
-
+Tip: Factions can optionally be added to player1 and player2
 /third_party_register_match
 Syntax: /register_match <player1:mention_user> <score:int> <player2:str> <score:int>
 Tip: Dont use this if you play against someone that is present in this discord server
@@ -253,16 +257,16 @@ Syntax /avg <player:mention_user>
 """)
 
 @client.tree.command(name="register_match",description="Register a match, use mentions for players")
-async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:discord.Member, score2:int):
+async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, faction1:str|None, player2:discord.Member, score2:int, faction2:str|None):
 	submitter = str(interaction.user) 
-	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2)
+	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2,faction1,faction2)
 	
 	await interaction.response.send_message(post)
 
 @client.tree.command(name="third_party_register_match",description="Register a match, use mention for memberplayer and string for third party")
-async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, player2:str, score2:int):
+async def register(interaction: discord.Interaction, player1: discord.Member, score1: int,faction1:str|None, player2:str, score2:int,faction2:str|None):
 	submitter = str(interaction.user) 
-	post=client.register_match(interaction.user,player1.name,score1,"ext_"+player2,score2)
+	post=client.register_match(interaction.user,player1.name,score1,"ext_"+player2,score2,faction1,faction2)
 	
 	await interaction.response.send_message(post)
 
