@@ -6,6 +6,10 @@ import re
 import random
 import datetime
 from discord import app_commands
+from PIL import Image, ImageOps
+import pytesseract
+import requests
+import os 
 
 intents=discord.Intents.default()
 intents.message_content=True
@@ -196,7 +200,22 @@ class my_client(discord.Client):
 			embed.add_field(name="extra info:",value="You havn't played 5 matches, so your top 5 is really the same as your normal average")
 
 		return(embed)
-
+	
+	def ocr(self,file):
+		img_data=requests.get(file.url).content
+		with open('temp.jpg','wb') as handle:
+			handle.write(img_data)
+		image=Image.open('temp.jpg')
+		
+		greyscale=ImageOps.grayscale(image)
+		extracted_text=pytesseract.image_to_string(image)
+		
+		try: 
+			os.remove('temp.jpg')
+		except FileNotFoundError:
+			print("help, file does not exist") 
+			
+		return(extracted_text)
 
 
 ################################################OLD
@@ -206,7 +225,7 @@ class my_client(discord.Client):
 		#Never, ever answer yourself
 		if message.author == self.user:
 			return
-
+		
 with open("../disckey") as dt_file:
 	dt = "".join(dt_file.readlines())
 #	print("".join(dt)) 
@@ -294,6 +313,13 @@ async def list(interaction: discord.Interaction, user:discord.Member):
 async def avg(interaction: discord.Interaction, user:discord.Member):
 	post = client.avg(user.name)	
 	await interaction.response.send_message(embed=post)
+
+
+@client.tree.command(description="Image black magic")
+async def black_magic(interaction: discord.Interaction, file:discord.Attachment):
+	post = client.ocr(file)
+	await interaction.response.send_message(post)
+
 
 
 
