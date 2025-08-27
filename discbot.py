@@ -208,7 +208,8 @@ class my_client(discord.Client):
 		image=Image.open('temp.jpg')
 		
 		greyscale=ImageOps.grayscale(image)
-		extracted_text=pytesseract.image_to_string(image)
+		extracted_text=pytesseract.image_to_string(image, config="-c tessedit_char_whitelist='0123456789abcedfefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖáÁ ,-'")
+
 		
 		try: 
 			os.remove('temp.jpg')
