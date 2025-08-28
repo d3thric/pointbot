@@ -14,8 +14,26 @@ import os
 intents=discord.Intents.default()
 intents.message_content=True
 memory=[]
+ 
+class black_magic_view(discord.ui.View):
+	response=False		
+	@discord.ui.button(label="yes", style=discord.ButtonStyle.green)
+	async def confirm(self,button,interaction):
+		await button.response.send_message("cool, saving that", ephemeral=True)
+		self.response=True
+		self.stop()
+
+	@discord.ui.button(label="no", style=discord.ButtonStyle.red)
+	async def deny(self,button,interaction):
+		await button.response.send_message("Not cool, wont be saving that", ephemeral=True)
+		self.response=False
+		self.stop()
+
+	def get_response(self):
+		return self.response
 
 class warhammermatch:
+	factionlist=["adepta sororitas","adeptus custodes","adeptus mechanicus","adeptus titanicus","astra militarum","grey knights","imperial agents","imperial knights","space marines","chaos daemons","chaos knights","chaos space marines","death guard","emperor’s children","thousand sons","world eaters","aeldari","drukhari","genestealer cults","leagues of votann","necrons","orks","t’au empire","tyranids"]
 	player1=""
 	player2=""
 	score1=""
@@ -81,18 +99,24 @@ class my_client(discord.Client):
 
 
 	def register_match(self,poster,player1,score1,player2,score2, *args):
+		reminder=""
 		if score1 not in range(0,101):
 			error = "Player 1 score out of bounds\n"
 		if score2 not in range(0,101):
 			error += "Player 2 score out of bounds\n"
 		print(args)	
 		new_match = warhammermatch(poster,player1, player2, score1, score2)
-		if args[0] and args[1]:
+		print(args)
+		if len(args)>1 :
 			new_match.set_factions(args[0],args[1])
-		
+			if args[0] in factionlist and args[1] in factionlist:
+				print("everything is fine")
+			else: 
+				reminder="\nThe match is registered, but factions are non standardized"
+
 		print(new_match.get_data())
 		new_match.save_data()
-		return("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id()))
+		return("And the winner is: "+new_match.get_winner() + "\n" + "your match id is: "+str(new_match.get_match_id())+reminder)
 			
 	def delete_match(self,match_id,user):
 		#Open memory file
@@ -256,6 +280,11 @@ Tip: Factions can optionally be added to player1 and player2
 Syntax: /register_match <player1:mention_user> <score:int> <player2:str> <score:int>
 Tip: Dont use this if you play against someone that is present in this discord server
 
+/black_magic
+Register a match, with the black magic of AI and OCR. 
+Syntax: /black_magic <screenshot:cropped image> <player2:mention_user>
+Tip: Crop the screenshot from tabletop battles so that only one match is included in the screenshot. 
+
 /delete
 Delete a match
 Syntax: /delete <matchid:int>
@@ -279,7 +308,11 @@ Syntax /avg <player:mention_user>
 @client.tree.command(name="register_match",description="Register a match, use mentions for players")
 async def register(interaction: discord.Interaction, player1: discord.Member, score1: int, faction1:str|None, player2:discord.Member, score2:int, faction2:str|None):
 	submitter = str(interaction.user) 
-	post=client.register_match(interaction.user,player1.name,score1,player2.name,score2,faction1,faction2)
+	if(faction1 and faction2):
+	
+		post=client.register_match(interaction.user,player1.name,score1,player2.name,score2,faction1,faction2)
+	else:
+		post=client.register_match(interaction.user,player1.name,score1,player2.name,score2)
 	
 	await interaction.response.send_message(post)
 
@@ -317,13 +350,23 @@ async def avg(interaction: discord.Interaction, user:discord.Member):
 
 
 @client.tree.command(description="Image black magic")
-async def black_magic(interaction: discord.Interaction, file:discord.Attachment):
-	
+async def black_magic(interaction: discord.Interaction, file:discord.Attachment, opponent:discord.Member):
+	v = black_magic_view()
 	await interaction.response.defer(ephemeral=True)
 	post = client.ocr(file)
+	print(re.split("\n",post))
 	
-	await interaction.followup.send(post)
+	print(re.split(',| |-|\n',post))
+	result=re.split(',| |-|\n',post)
+	print(result)
+	await interaction.followup.send(f"{interaction.user}, {result[6]} - {opponent.name}, {result[7]}"+"\n is this correct?", view=v)
+	await v.wait()
+	print(v.get_response())
+	if(v.get_response()):
+		post=client.register_match(interaction.user,interaction.user.name,result[6],opponent.name,result[7])
 
+#	await interaction.response.send_message(view=black_magic_view())
+	
 
 
 
