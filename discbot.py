@@ -10,6 +10,7 @@ from PIL import Image, ImageOps
 import pytesseract
 import requests
 import os 
+import sys
 
 intents=discord.Intents.default()
 intents.message_content=True
@@ -230,10 +231,11 @@ class my_client(discord.Client):
 		with open('temp.jpg','wb') as handle:
 			handle.write(img_data)
 		image=Image.open('temp.jpg')
-		
-		greyscale=ImageOps.grayscale(image)
-		extracted_text=pytesseract.image_to_string(image, config="-c tessedit_char_whitelist='0123456789abcedfefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖáÁ ,-'")
-
+		if os.path.getsize('temp.jpg') < 50000:
+			greyscale=ImageOps.grayscale(image)
+			extracted_text=pytesseract.image_to_string(image, config="-c tessedit_char_whitelist='0123456789abcedfefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖáÁ ,-'")
+		else: 
+			return(-1) 
 		
 		try: 
 			os.remove('temp.jpg')
@@ -352,19 +354,26 @@ async def avg(interaction: discord.Interaction, user:discord.Member):
 @client.tree.command(description="Image black magic")
 async def black_magic(interaction: discord.Interaction, file:discord.Attachment, opponent:discord.Member):
 	v = black_magic_view()
-	await interaction.response.defer(ephemeral=True)
+	await interaction.response.defer(ephemeral=True) 
 	post = client.ocr(file)
-	print(re.split("\n",post))
-	
-	print(re.split(',| |-|\n',post))
-	result=re.split(',| |-|\n',post)
-	print(result)
-	await interaction.followup.send(f"{interaction.user}, {result[6]} - {opponent.name}, {result[7]}"+"\n is this correct?", view=v)
-	await v.wait()
-	print(v.get_response())
-	if(v.get_response()):
-		post=client.register_match(interaction.user,interaction.user.name,result[6],opponent.name,result[7])
-
+	if post == -1: 
+		await interaction.followup.send(f"OCR function received error code -1, meaning the image is to large, the current max is ~50kb")
+	else:
+		split=re.split("\n",post)
+		points=re.match(r".*\s(\d+)-(\d+)\s.*",split[2])
+		if points and points[1] and points[2]:
+			print(points[1],points[2])
+			print(split[4])
+			print(re.split(',| |-|\n',post))
+			result=re.split(',| |-|\n',post)
+			print(result)
+			await interaction.followup.send(f"{interaction.user}, {points[1]} - {opponent.name}, {points[2]}"+"\n is this correct?", view=v)
+			await v.wait()
+			print(v.get_response())
+			if(v.get_response()):
+				post=client.register_match(interaction.user,interaction.user.name,points[1],opponent.name,points[2])
+		else: 
+			await interaction.followup.send(f"Something went wrong with the OCR, i recognized the following \n{post}, but i dont know what to do")
 #	await interaction.response.send_message(view=black_magic_view())
 	
 
