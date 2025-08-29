@@ -14,7 +14,7 @@ import sys
 
 intents=discord.Intents.default()
 intents.message_content=True
-memory=[]
+factionlist=["adepta sororitas","adeptus custodes","adeptus mechanicus","adeptus titanicus","astra militarum","grey knights","imperial agents","imperial knights","space marines","chaos daemons","chaos knights","chaos space marines","death guard","emperor’s children","thousand sons","world eaters","aeldari","drukhari","genestealer cults","leagues of votann","necrons","orks","t’au empire","tyranids"]
  
 class black_magic_view(discord.ui.View):
 	response=False		
@@ -34,7 +34,6 @@ class black_magic_view(discord.ui.View):
 		return self.response
 
 class warhammermatch:
-	factionlist=["adepta sororitas","adeptus custodes","adeptus mechanicus","adeptus titanicus","astra militarum","grey knights","imperial agents","imperial knights","space marines","chaos daemons","chaos knights","chaos space marines","death guard","emperor’s children","thousand sons","world eaters","aeldari","drukhari","genestealer cults","leagues of votann","necrons","orks","t’au empire","tyranids"]
 	player1=""
 	player2=""
 	score1=""
@@ -101,8 +100,9 @@ class my_client(discord.Client):
 
 	def register_match(self,poster,player1,score1,player2,score2, *args):
 		reminder=""
+		error = ""
 		if score1 not in range(0,101):
-			error = "Player 1 score out of bounds\n"
+			error += "Player 1 score out of bounds\n"
 		if score2 not in range(0,101):
 			error += "Player 2 score out of bounds\n"
 		print(args)	
@@ -231,7 +231,7 @@ class my_client(discord.Client):
 		with open('temp.jpg','wb') as handle:
 			handle.write(img_data)
 		image=Image.open('temp.jpg')
-		if os.path.getsize('temp.jpg') < 50000:
+		if os.path.getsize('temp.jpg') < 50000 and os.path.getsize('temp.jpg')>1000:
 			greyscale=ImageOps.grayscale(image)
 			extracted_text=pytesseract.image_to_string(image, config="-c tessedit_char_whitelist='0123456789abcedfefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖáÁ ,-'")
 		else: 
@@ -357,13 +357,14 @@ async def black_magic(interaction: discord.Interaction, file:discord.Attachment,
 	await interaction.response.defer(ephemeral=True) 
 	post = client.ocr(file)
 	if post == -1: 
-		await interaction.followup.send(f"OCR function received error code -1, meaning the image is to large, the current max is ~50kb")
+		await interaction.followup.send(f"OCR function received error code -1, meaning the image is to large or to small, the current span is 1kb - 50kb")
 	else:
 		split=re.split("\n",post)
 		points=re.match(r".*\s(\d+)-(\d+)\s.*",split[2])
 		if points and points[1] and points[2]:
 			print(points[1],points[2])
 			print(split[4])
+#Add faction detection here
 			print(re.split(',| |-|\n',post))
 			result=re.split(',| |-|\n',post)
 			print(result)
